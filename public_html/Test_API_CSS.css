@@ -16,6 +16,10 @@ and open the template in the editor.
     background-color: lightgreen;
     font-weight:bold;
 }
+.ResultRunning{
+    background-color: yellow;
+    font-weight:bold;
+}
 .ResultFailed{
     background-color: red;
     font-weight:bold;
