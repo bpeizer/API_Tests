@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<body>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<link rel="stylesheet" type="text/css" href="Test_API_CSS.css">
+
+<script>
+function fireTest(){
+    LoadLocalImage()
+    RegisterService()
+}    
+
+
+
+function RegisterService(){
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/service",
+  "method": "POST",
+  "headers": {
+    "content-type": "application/json",
+    "authorization":"Basic " + btoa("56a1d9cc-cffb-47ea-a972-ad4830512fde" + ":" + ""),
+  },
+  "processData": false,
+  "data": "{\n    \"url\": \"https://pzsvc-hello.{{domain}}/\",\n    \"contractUrl\": \"http://helloContract\",\n    \"method\" : \"GET\",\n    \"isAsynchronous\" : \"false\",\n    \"resourceMetadata\": {\n        \"name\": \"pzsvc-hello service\",\n        \"description\": \"Hello World Example\",\n        \"classType\": {\n            \"classification\": \"UNCLASSIFIED\"\n         }\n    }\n}",
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("ResultRegisterService").className = "ResultSuccess";
+     document.getElementById("ResultRegisterService2").className = "ResultSuccess";
+     $('#ResultRegisterService').html("Success");
+     $('#ResultRegisterService2').html("Result: "+JSON.stringify(response));
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("ResultRegisterService").className = "ResultFailed";
+     document.getElementById("ResultRegisterService2").className = "ResultFailed";
+     $('#ResultRegisterService').html("Error: "+ errorThrown + " Status "+status);
+     $('#ResultRegisterService2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings);
+}
+
+function LoadLocalImage(){
+var file = document.getElementById("uploadfile");
+var form = new FormData();
+form.append("data", "{ \"type\": \"ingest\", \"host\": \"true\", \"data\" : { \"dataType\": { \"type\": \"raster\" }, \"metadata\": { \"name\": \"terrametrics.tif\", \"description\": \"Testing the DOCS\" } } }");
+form.append("file", file.files[0]);
+
+
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/data/file",
+  "method": "POST",
+  "headers": {
+    "authorization":"Basic " + btoa("56a1d9cc-cffb-47ea-a972-ad4830512fde" + ":" + "")
+  },
+  "processData": false,
+  "contentType": false,
+  "mimeType": "multipart/form-data",
+  "data": form,
+    "success": function (response) {
+     console.log(response);
+     document.getElementById("ResultLoadLocalImage").className = "ResultSuccess";
+     document.getElementById("ResultLoadLocalImage2").className = "ResultSuccess";
+     $('#ResultLoadLocalImage').html("Success");
+     $('#ResultLoadLocalImage2').html("Result: "+JSON.stringify(response));
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("ResultLoadLocalImage").className = "ResultFailed";
+     document.getElementById("ResultLoadLocalImage2").className = "ResultFailed";
+     $('#ResultLoadLocalImage').html("Error: "+ errorThrown + " Status "+status);
+     $('#ResultLoadLocalImage2').html("Result: "+xhr);
+  }
+};
+
+$.ajax(settings);
+}
+
+
+</script>
+<div id="runTestDiv">
+    <input type="button" value="Run Test" onclick="fireTest()" />
+</div>
+<div id="txtRegisterServiceTitle">
+    <label class="TestTitle">Register Service Results</label>
+    <label class="Result" id="ResultRegisterService">Not Run</label>
+    <label class="Result" id="ResultRegisterService2">Not Run</label>
+</div>
+<div id="txtLoadLocalImageTitle">
+    <label class="TestTitle">Load Local Image</label>
+    <label class="Result" id="ResultLoadLocalImage">Not Run</label>
+    <label class="Result" id="ResultLoadLocalImage2">Not Run</label>
+    <input type="file" id="uploadfile" name="uploadfile" />
+</div>
+</body>
+</html>
