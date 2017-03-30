@@ -11,19 +11,27 @@ and open the template in the editor.
     color: black;
     background-color: grey;
     font-weight:bold;
+    white-space: nowrap;
 }
 .ResultSuccess{
     background-color: lightgreen;
     font-weight:bold;
+    white-space: nowrap;
 }
 .ResultRunning{
     background-color: yellow;
     font-weight:bold;
+    white-space: nowrap;
 }
 .ResultFailed{
     background-color: red;
     font-weight:bold;
+    white-space: nowrap;
 }
 .TestTitle{
-    font-weight:bold
+    font-weight:bold;
+    white-space: nowrap;
+}
+.TestDiv{
+    white-space: nowrap;
 }

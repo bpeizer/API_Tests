@@ -13,6 +13,7 @@ function fireTest(){
     IngestExternalRaster();
     ExecuteJobCopy();
     SetupDog();
+    CreateEventType();
     
 }    
 
@@ -40,6 +41,14 @@ var settings = {
      document.getElementById("ResultRegisterService2").className = "ResultSuccess";
      $('#ResultRegisterService').html("Success");
      $('#ResultRegisterService2').html("Result: "+JSON.stringify(response));
+     var jsonResult= JSON.stringify(response);
+     var start = jsonResult.indexOf("serviceId");
+     var end = jsonResult.indexOf("}}");
+     jsonResult = jsonResult.substring(start+11,end-1);
+     jsonResult=jsonResult.replace("\"","");
+     jsonResult=jsonResult.replace("\"","");
+     
+     $('#ResultRegisterServiceVar').html("Result: "+jsonResult);
      },
   "error": function (xhr,status,errorThrown){
      console.log(xhr);
@@ -328,6 +337,7 @@ var settings = {
      $('#SetupDog2').html("Result: "+JSON.stringify(response));
      $('#SetupDogVar').html("Result: "+jsonResult.data.jobId);
      DogStatus();
+     DogFilter();
      },
   "error": function (xhr,status,errorThrown){
      console.log(xhr);
@@ -374,6 +384,7 @@ var settings = {
      $('#StatusGeoJSONVar').html("Result: "+jsonResult);
      $('#StatusGeoJSON2').html("Result: "+JSON.stringify(response));
      GetGeoJSONdata();
+     InvokeHello()
      },
   "error": function (xhr,status,errorThrown){
      console.log(xhr);
@@ -563,87 +574,257 @@ var settings = {
 $.ajax(settings); 
 
 }
+function DogFilter(){
+     document.getElementById("DogFilter").className = "ResultRunning";
+     document.getElementById("DogFilter2").className = "ResultRunning";
+     $('#DogFilter').html("Running");
+     $('#DogFilter2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/data?keyword=dog",
+  "method": "GET",
+  "headers": {
+    "authorization":"Basic " + btoa("56a1d9cc-cffb-47ea-a972-ad4830512fde" + ":" + ""),
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("DogFilter").className = "ResultSuccess";
+     document.getElementById("DogFilter2").className = "ResultSuccess";
+     $('#DogFilter').html("Success");
+     $('#DogFilter2').html("Result: "+JSON.stringify(response));
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("DogFilter").className = "ResultFailed";
+     document.getElementById("DogFilter2").className = "ResultFailed";
+     $('#DogFilter').html("Error: "+ errorThrown + " Status "+status);
+     $('#DogFilter2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings); 
+
+}
+function InvokeHello(){
+   var serviceid=document.getElementById("ResultRegisterServiceVar").textContent;
+    serviceid=serviceid.substring(8);
+    console.log(serviceid);
+    var jobId=document.getElementById("LoadGeoJSONFileVar").textContent;
+    jobId=jobId.substring(8);
+    console.log(jobId);
+     document.getElementById("DogFilter").className = "ResultRunning";
+     document.getElementById("DogFilter2").className = "ResultRunning";
+     $('#DogFilter').html("Running");
+     $('#DogFilter2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/job/"+jobId,
+  "method": "GET",
+  "processData": false,
+  "data": "{\n  \"type\":\"execute-service\",\n  \"data\":{\n    \"serviceId\":  \""+serviceid+"\",\n    \"dataInputs\": {},\n    \"dataOutput\": [{ \"mimeType\":\"application/json\", \"type\":\"text\" }]\n  }\n}",
+  "headers": {
+    "authorization":"Basic " + btoa("56a1d9cc-cffb-47ea-a972-ad4830512fde" + ":" + ""),
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("InvokeHello").className = "ResultSuccess";
+     document.getElementById("InvokeHello2").className = "ResultSuccess";
+     $('#InvokeHello').html("Success");
+     $('#InvokeHello2').html("Result: "+JSON.stringify(response));
+     var jsonResult= JSON.stringify(response);
+     var start = jsonResult.indexOf("jobId");
+     var end = jsonResult.indexOf("}}");
+     jsonResult = jsonResult.substring(start+8,end-1);
+     jsonResult=jsonResult.replace("\"","");
+     jsonResult=jsonResult.replace("\"","");
+     $('#InvokeHelloVar').html("Result: "+jsonResult);
+     InvokeJobStatus();
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("InvokeHello").className = "ResultFailed";
+     document.getElementById("InvokeHello2").className = "ResultFailed";
+     $('#InvokeHello').html("Error: "+ errorThrown + " Status "+status);
+     $('#InvokeHello2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings); 
+
+}
+
+function InvokeJobStatus(){
+    var jobId=document.getElementById("InvokeHelloVar").textContent;
+    jobId=jobId.substring(8);
+    console.log(jobId);
+     document.getElementById("InvokeJobStatus").className = "ResultRunning";
+     document.getElementById("InvokeJobStatus2").className = "ResultRunning";
+     $('#InvokeJobStatus').html("Running");
+     $('#InvokeJobStatus2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/job/"+jobId,
+  "method": "POST",
+  "headers": {
+    "authorization":"Basic " + btoa("56a1d9cc-cffb-47ea-a972-ad4830512fde" + ":" + ""),
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("InvokeJobStatus").className = "ResultSuccess";
+     document.getElementById("InvokeJobStatus2").className = "ResultSuccess";
+     $('#InvokeJobStatus').html("Success");
+     $('#InvokeJobStatus2').html("Result: "+JSON.stringify(response));
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("InvokeJobStatus").className = "ResultFailed";
+     document.getElementById("InvokeJobStatus2").className = "ResultFailed";
+     $('#InvokeJobStatus').html("Error: "+ errorThrown + " Status "+status);
+     $('#InvokeJobStatus2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings); 
+
+}
+
+function CreateEventType(){
+     document.getElementById("CreateEventType").className = "ResultRunning";
+     document.getElementById("CreateEventType2").className = "ResultRunning";
+     $('#CreateEventType').html("Running");
+     $('#CreateEventType2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/eventType",
+  "method": "POST",
+  "processData": false,
+  "data": "{\r\n  \"name\": \"testevent-1490814628\",\r\n  \"mapping\": {\r\n    \"filename\":  \"string\",\r\n    \"code\":    \"string\",\r\n    \"severity\":  \"integer\"\r\n  }\r\n}",
+  "headers": {
+    "authorization":"Basic " + btoa("56a1d9cc-cffb-47ea-a972-ad4830512fde" + ":" + ""),
+    "content-type": "application/json",
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("CreateEventType").className = "ResultSuccess";
+     document.getElementById("CreateEventType2").className = "ResultSuccess";
+     $('#CreateEventType').html("Success");
+     $('#CreateEventType2').html("Result: "+JSON.stringify(response));
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("CreateEventType").className = "ResultFailed";
+     document.getElementById("CreateEventType2").className = "ResultFailed";
+     $('#CreateEventType').html("Error: "+ errorThrown + " Status "+status);
+     $('#CreateEventType2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings); 
+
+}
 </script>
-<div id="runTestDiv">
+<div class="TestDiv "  id="runTestDiv">
     <input type="button" value="Run Test" onclick="fireTest()" />
 </div>
-<div id="txtRegisterServiceTitle">
-    <label class="TestTitle">Register Service Results</label>
+<div class="TestDiv "  id="txtRegisterServiceTitle">
+    <label class="TestTitle">5.2.1 Register Hello Example Service</label>
     <label class="Result" id="ResultRegisterService">Not Run</label>
     <label class="Result" id="ResultRegisterService2">Not Run</label>
+    <label class="Result" id="ResultRegisterServiceVar">Not Run</label>
 </div>
-<div id="txtLoadLocalImageTitle">
-    <label class="TestTitle">Load Local Image</label>
+<div class="TestDiv "  id="txtLoadLocalImageTitle">
+    <label class="TestTitle">3.1.1 Loading a Local Image</label>
     <label class="Result" id="ResultLoadLocalImage">Not Run</label>
     <label class="Result" id="ResultLoadLocalImage2">Not Run</label>
     <label class="Result" id="ResultLoadLocalImageVar">Not Run</label>
     <input type="file" id="uploadfileLocalImage" name="uploadfileLocalImage" />
 </div>
-<div id="txtStatusLocalImageTitle">
-    <label class="TestTitle">Status Local Image</label>
+<div class="TestDiv "  id="txtStatusLocalImageTitle">
+    <label class="TestTitle">3.1 Status of Local Image</label>
     <label class="Result" id="StatusLoadLocalImage">Not Run</label>
     <label class="Result" id="StatusLoadLocalImage2">Not Run</label>
 </div>
-<div id="txtDeploymentTitle">
-    <label class="TestTitle">MWS Deployment</label>
+<div class="TestDiv "  id="txtDeploymentTitle">
+    <label class="TestTitle">3.1.2 WMS Deployment</label>
     <label class="Result" id="Deployment">Not Run</label>
     <label class="Result" id="Deployment2">Not Run</label>
 </div>
-<div id="txtIngestExternalRasterTitle">
-    <label class="TestTitle">Ingest External Raster</label>
+<div class="TestDiv "  id="txtIngestExternalRasterTitle">
+    <label class="TestTitle">3.2 Ingest External Raster</label>
     <label class="Result" id="IngestExternalRaster">Not Run</label>
     <label class="Result" id="IngestExternalRaster2">Not Run</label>
     <label class="Result" id="IngestExternalRasterVar">Not Run</label>
 </div>
-<div id="txtLoadGeoJSONFileTitle">
-    <label class="TestTitle">Load GeoJSON File</label>
+<div class="TestDiv "  id="txtLoadGeoJSONFileTitle">
+    <label class="TestTitle">3.3 Loading a GeoJSON File</label>
     <label class="Result" id="LoadGeoJSONFile">Not Run</label>
     <label class="Result" id="LoadGeoJSONFile2">Not Run</label>
     <label class="Result" id="LoadGeoJSONFileVar">Not Run</label>
     <input type="file" id="uploadfileGeoJSON" name="uploadfileGeoJSON" />
 </div>
-<div id="txtExecuteJobCopy">
-    <label class="TestTitle">Execute Job Copy</label>
+<div class="TestDiv "  id="txtExecuteJobCopy">
+    <label class="TestTitle">Execute Job copy</label>
     <label class="Result" id="ExecuteJobCopy">Not Run</label>
     <label class="Result" id="ExecuteJobCopy2">Not Run</label>
 </div>
-<div id="txtSetupDogTitle">
-    <label class="TestTitle">Setup Dog</label>
+<div class="TestDiv "  id="txtSetupDogTitle">
+    <label class="TestTitle">4.1 Setup: dog</label>
     <label class="Result" id="SetupDog">Not Run</label>
     <label class="Result" id="SetupDog2">Not Run</label>
     <label class="Result" id="SetupDogVar">Not Run</label>
     <input type="file" id="uploadfileSetupDog" name="uploadfileSetupDog" />
 </div>
-<div id="txtStatusGeoJSON">
-    <label class="TestTitle">Status of GeoJSON</label>
+<div class="TestDiv "  id="txtStatusGeoJSON">
+    <label class="TestTitle">3.3 Status of GeoJSON</label>
     <label class="Result" id="StatusGeoJSON">Not Run</label>
     <label class="Result" id="StatusGeoJSON2">Not Run</label>
     <label class="Result" id="StatusGeoJSONVar">Not Run</label>
 </div>
-<div id="txtGetGeoJSONdata">
-    <label class="TestTitle">Get GeoJSON data</label>
+<div class="TestDiv "  id="txtGetGeoJSONdata">
+    <label class="TestTitle">3.3 Get GeoJSON data</label>
     <label class="Result" id="GetGeoJSONdata">Not Run</label>
     <label class="Result" id="GetGeoJSONdata2">Not Run</label>
 </div>
-<div id="txtGetGeoJSONfile">
-    <label class="TestTitle">Get GeoJSON file</label>
+<div class="TestDiv "  id="txtGetGeoJSONfile">
+    <label class="TestTitle">3.3 Get GeoJSON file</label>
     <label class="Result" id="GetGeoJSONfile">Not Run</label>
     <label class="Result" id="GetGeoJSONfile2">Not Run</label>
 </div>
-<div id="txtDeleteGeoJSON">
-    <label class="TestTitle">Delete GeoJSON file</label>
+<div class="TestDiv "  id="txtDeleteGeoJSON">
+    <label class="TestTitle">Delete GeoJSON Data</label>
     <label class="Result" id="DeleteGeoJSON">Not Run</label>
     <label class="Result" id="DeleteGeoJSON2">Not Run</label>
 </div>
-<div id="txtExtIngestStatus">
-    <label class="TestTitle">Status of External Ingest</label>
+<div class="TestDiv "  id="txtExtIngestStatus">
+    <label class="TestTitle">3.2 Status of External Ingest</label>
     <label class="Result" id="ExtIngestStatus">Not Run</label>
     <label class="Result" id="ExtIngestStatus2">Not Run</label>
 </div>
-<div id="txtDogStatus">
-    <label class="TestTitle">Dog Status</label>
+<div class="TestDiv "  id="txtDogStatus">
+    <label class="TestTitle">4.1 Status: dog</label>
     <label class="Result" id="DogStatus">Not Run</label>
     <label class="Result" id="DogStatus2">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtDogFilter">
+    <label class="TestTitle">4.2 Filtered GET: dog</label>
+    <label class="Result" id="DogFilter">Not Run</label>
+    <label class="Result" id="DogFilter2">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtInvokeHello">
+    <label class="TestTitle">5.3.1 Invoke Hello Example Service with GET</label>
+    <label class="Result" id="InvokeHello">Not Run</label>
+    <label class="Result" id="InvokeHello2">Not Run</label>
+    <label class="Result" id="InvokeHelloVar">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtInvokeJobStatus">
+    <label class="TestTitle">5.3.3 Invoked service Job Status POST</label>
+    <label class="Result" id="InvokeJobStatus">Not Run</label>
+    <label class="Result" id="InvokeJobStatus2">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtCreateEventType">
+    <label class="TestTitle">6.1 Create EventType</label>
+    <label class="Result" id="CreateEventType">Not Run</label>
+    <label class="Result" id="CreateEventType2">Not Run</label>
 </div>
 </body>
 </html>
