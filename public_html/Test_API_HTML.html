@@ -593,6 +593,8 @@ var settings = {
      document.getElementById("DogFilter2").className = "ResultSuccess";
      $('#DogFilter').html("Success");
      $('#DogFilter2').html("Result: "+JSON.stringify(response));
+     CreateEvent();
+     FindAlert();
      },
   "error": function (xhr,status,errorThrown){
      console.log(xhr);
@@ -640,6 +642,7 @@ var settings = {
      jsonResult=jsonResult.replace("\"","");
      $('#InvokeHelloVar').html("Result: "+jsonResult);
      InvokeJobStatus();
+     CreateTrigger();
      },
   "error": function (xhr,status,errorThrown){
      console.log(xhr);
@@ -691,6 +694,7 @@ $.ajax(settings);
 function CreateEventType(){
      document.getElementById("CreateEventType").className = "ResultRunning";
      document.getElementById("CreateEventType2").className = "ResultRunning";
+     var unique = new Date();
      $('#CreateEventType').html("Running");
      $('#CreateEventType2').html("Running");
 var settings = {
@@ -699,7 +703,7 @@ var settings = {
   "url": "https://pz-gateway.dev.east.paas.nga.mil/eventType",
   "method": "POST",
   "processData": false,
-  "data": "{\r\n  \"name\": \"testevent-1490814628\",\r\n  \"mapping\": {\r\n    \"filename\":  \"string\",\r\n    \"code\":    \"string\",\r\n    \"severity\":  \"integer\"\r\n  }\r\n}",
+  "data": "{\r\n  \"name\": \"testevent-"+unique.getTime()+"\",\r\n  \"mapping\": {\r\n    \"filename\":  \"string\",\r\n    \"code\":    \"string\",\r\n    \"severity\":  \"integer\"\r\n  }\r\n}",
   "headers": {
     "authorization":"Basic " + btoa("56a1d9cc-cffb-47ea-a972-ad4830512fde" + ":" + ""),
     "content-type": "application/json",
@@ -710,6 +714,13 @@ var settings = {
      document.getElementById("CreateEventType2").className = "ResultSuccess";
      $('#CreateEventType').html("Success");
      $('#CreateEventType2').html("Result: "+JSON.stringify(response));
+          var jsonResult= JSON.stringify(response);
+     var start = jsonResult.indexOf("eventTypeId");
+     var end = jsonResult.indexOf("name");
+     jsonResult = jsonResult.substring(start+12,end-3);
+     jsonResult=jsonResult.replace("\"","");
+     jsonResult=jsonResult.replace("\"","");
+     $('#CreateEventTypeVar').html("Result: "+jsonResult);
      },
   "error": function (xhr,status,errorThrown){
      console.log(xhr);
@@ -717,6 +728,126 @@ var settings = {
      document.getElementById("CreateEventType2").className = "ResultFailed";
      $('#CreateEventType').html("Error: "+ errorThrown + " Status "+status);
      $('#CreateEventType2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings); 
+
+}
+function CreateTrigger(){
+    var eventTypeId=document.getElementById("CreateEventTypeVar").textContent;
+    eventTypeId=eventTypeId.substring(9);
+    console.log(eventTypeId);
+    var serviceId=document.getElementById("ResultRegisterServiceVar").textContent;
+    serviceId=serviceId.substring(8);
+    console.log(serviceId);
+     document.getElementById("CreateTrigger").className = "ResultRunning";
+     document.getElementById("CreateTrigger2").className = "ResultRunning";
+     $('#CreateTrigger').html("Running");
+     $('#CreateTrigger2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/trigger",
+  "method": "POST",
+     "processData": false,
+  "data": "{\r\n    \"name\": \"High Severity\",\r\n    \"eventTypeId\": \""+eventTypeId+"\",\r\n    \"condition\": {\r\n        \"query\": { \"query\": { \"match_all\": {} } }\r\n    },\r\n    \"job\": {\r\n        \"userName\": \"test\",\r\n        \"jobType\": {\r\n            \"type\": \"execute-service\",\r\n            \"data\": {\r\n                \"serviceId\": \""+serviceId+"\",\r\n                \"dataInputs\": {},\r\n                \"dataOutput\": [\r\n                    {\r\n                        \"mimeType\": \"application/json\",\r\n                        \"type\": \"text\"\r\n                    }\r\n                ]\r\n            }\r\n        }\r\n    },\r\n    \"enabled\": true\r\n}",
+  "headers": {
+    "authorization":"Basic " + btoa("56a1d9cc-cffb-47ea-a972-ad4830512fde" + ":" + ""),
+    "content-type": "application/json",
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("CreateTrigger").className = "ResultSuccess";
+     document.getElementById("CreateTrigger2").className = "ResultSuccess";
+     $('#CreateTrigger').html("Success");
+     $('#CreateTrigger2').html("Result: "+JSON.stringify(response));
+     var jsonResult= JSON.stringify(response);
+     var start = jsonResult.indexOf("triggerId");
+     var end = jsonResult.indexOf("name");
+     jsonResult = jsonResult.substring(start+12,end-2);
+     jsonResult=jsonResult.replace("\"","");
+     jsonResult=jsonResult.replace("\"","");
+     $('#CreateTriggerVar').html("Result: "+jsonResult);
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("CreateTrigger").className = "ResultFailed";
+     document.getElementById("CreateTrigger2").className = "ResultFailed";
+     $('#CreateTrigger').html("Error: "+ errorThrown + " Status "+status);
+     $('#CreateTrigger2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings); 
+
+}
+
+function CreateEvent(){
+    var eventTypeId=document.getElementById("CreateEventTypeVar").textContent;
+    eventTypeId=eventTypeId.substring(9);
+    console.log(eventTypeId);
+     document.getElementById("CreateEvent").className = "ResultRunning";
+     document.getElementById("CreateEvent2").className = "ResultRunning";
+     $('#CreateEvent').html("Running");
+     $('#CreateEvent2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/event",
+  "method": "POST",
+     "processData": false,
+    "data": "{\r\n    \"eventTypeId\": \""+eventTypeId+"\",\r\n    \"data\": {\r\n        \"filename\": \"test\",\r\n        \"severity\": 200,\r\n        \"code\": \"us-bbox\"\r\n    }\r\n}",
+    "headers": {
+    "authorization":"Basic " + btoa("56a1d9cc-cffb-47ea-a972-ad4830512fde" + ":" + ""),
+    "content-type": "application/json",
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("CreateEvent").className = "ResultSuccess";
+     document.getElementById("CreateEvent2").className = "ResultSuccess";
+     $('#CreateEvent').html("Success");
+     $('#CreateEvent2').html("Result: "+JSON.stringify(response));
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("CreateEvent").className = "ResultFailed";
+     document.getElementById("CreateEvent2").className = "ResultFailed";
+     $('#CreateEvent').html("Error: "+ errorThrown + " Status "+status);
+     $('#CreateEvent2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings); 
+
+}
+function FindAlert(){
+    var triggerId=document.getElementById("CreateTriggerVar").textContent;
+    triggerId=triggerId.substring(8);
+    console.log(triggerId);
+     document.getElementById("FindAlert").className = "ResultRunning";
+     document.getElementById("FindAlert2").className = "ResultRunning";
+     $('#FindAlert').html("Running");
+     $('#FindAlert2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/alert?triggerId="+triggerId,
+  "method": "GET",
+     "processData": false,
+     "headers": {
+    "authorization":"Basic " + btoa("56a1d9cc-cffb-47ea-a972-ad4830512fde" + ":" + ""),
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("FindAlert").className = "ResultSuccess";
+     document.getElementById("FindAlert2").className = "ResultSuccess";
+     $('#FindAlert').html("Success");
+     $('#FindAlert2').html("Result: "+JSON.stringify(response));
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("FindAlert").className = "ResultFailed";
+     document.getElementById("FindAlert2").className = "ResultFailed";
+     $('#FindAlert').html("Error: "+ errorThrown + " Status "+status);
+     $('#FindAlert2').html("Result: "+xhr);
   }
 };
 $.ajax(settings); 
@@ -825,6 +956,23 @@ $.ajax(settings);
     <label class="TestTitle">6.1 Create EventType</label>
     <label class="Result" id="CreateEventType">Not Run</label>
     <label class="Result" id="CreateEventType2">Not Run</label>
+     <label class="Result" id="CreateEventTypeVar">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtCreateTrigger">
+    <label class="TestTitle">6.2 Create Trigger</label>
+    <label class="Result" id="CreateTrigger">Not Run</label>
+    <label class="Result" id="CreateTrigger2">Not Run</label>
+    <label class="Result" id="CreateTriggerVar">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtCreateEvent">
+    <label class="TestTitle">6.3 Create Event</label>
+    <label class="Result" id="CreateEvent">Not Run</label>
+    <label class="Result" id="CreateEvent2">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtFindAlert">
+    <label class="TestTitle">6.4 Find Alert</label>
+    <label class="Result" id="FindAlert">Not Run</label>
+    <label class="Result" id="FindAlert2">Not Run</label>
 </div>
 </body>
 </html>
