@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html>
+<body>
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+<link rel="stylesheet" type="text/css" href="Test_API_CSS.css">
+
+<script>
+var localImageJob;
+function fireTest(){
+    var APIKey = document.getElementById("APIKEY").value;
+    LoadLocalImage(APIKey);
+    RegisterService(APIKey);
+    LoadGeoJSONFile(APIKey);
+    IngestExternalRaster(APIKey);
+    ExecuteJobCopy(APIKey);
+    SetupDog(APIKey);
+    CreateEventType(APIKey);
+    
+}    
+
+
+
+function RegisterService(APIKey){
+     document.getElementById("ResultRegisterService").className = "ResultRunning";
+     document.getElementById("ResultRegisterService2").className = "ResultRunning";
+     $('#ResultRegisterService').html("Running");
+     $('#ResultRegisterService2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/service",
+  "method": "POST",
+  "headers": {
+    "content-type": "application/json",
+    "authorization":"Basic " + btoa(APIKey + ":" + ""),
+  },
+  "processData": false,
+  "data": "{\n    \"url\": \"https://pz-gateway.dev.east.paas.nga.mil/\",\n    \"contractUrl\": \"http://helloContract\",\n    \"method\" : \"GET\",\n    \"isAsynchronous\" : \"false\",\n    \"resourceMetadata\": {\n        \"name\": \"pzsvc-hello service\",\n        \"description\": \"Hello World Example\",\n        \"classType\": {\n            \"classification\": \"UNCLASSIFIED\"\n         }\n    }\n}",
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("ResultRegisterService").className = "ResultSuccess";
+     document.getElementById("ResultRegisterService2").className = "ResultSuccess";
+     $('#ResultRegisterService').html("Success");
+     $('#ResultRegisterService2').html("Result: "+JSON.stringify(response));
+     var jsonResult= JSON.stringify(response);
+     var start = jsonResult.indexOf("serviceId");
+     var end = jsonResult.indexOf("}}");
+     jsonResult = jsonResult.substring(start+11,end-1);
+     jsonResult=jsonResult.replace("\"","");
+     jsonResult=jsonResult.replace("\"","");
+     
+     $('#ResultRegisterServiceVar').html("Result: "+jsonResult);
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("ResultRegisterService").className = "ResultFailed";
+     document.getElementById("ResultRegisterService2").className = "ResultFailed";
+     $('#ResultRegisterService').html("Error: "+ errorThrown + " Status "+status);
+     $('#ResultRegisterService2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings);
+}
+
+function LoadLocalImage(APIKey){
+var file = document.getElementById("uploadfileLocalImage");
+var form = new FormData();
+form.append("data", "{ \"type\": \"ingest\", \"host\": \"true\", \"data\" : { \"dataType\": { \"type\": \"raster\" }, \"metadata\": { \"name\": \"terrametrics.tif\", \"description\": \"Testing the DOCS\" } } }");
+form.append("file", file.files[0]);
+     document.getElementById("ResultLoadLocalImage").className = "ResultRunning";
+     document.getElementById("ResultLoadLocalImage2").className = "ResultRunning";
+     $('#ResultLoadLocalImage').html("Running");
+     $('#ResultLoadLocalImage2').html("Running");
+
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/data/file",
+  "method": "POST",
+  "headers": {
+    "authorization":"Basic " + btoa(APIKey + ":" + "")
+  },
+  "processData": false,
+  "contentType": false,
+  "mimeType": "multipart/form-data",
+  "data": form,
+    "success": function (response) {
+     console.log(response);
+     document.getElementById("ResultLoadLocalImage").className = "ResultSuccess";
+     document.getElementById("ResultLoadLocalImage2").className = "ResultSuccess";
+     $('#ResultLoadLocalImage').html("Success");
+     var jsonResult= JSON.parse(response);
+     $('#ResultLoadLocalImage2').html("Result: "+JSON.stringify(response));
+     $('#ResultLoadLocalImageVar').html("Result: "+jsonResult.data.jobId); 
+     StatusLocalImage(APIKey);
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("ResultLoadLocalImage").className = "ResultFailed";
+     document.getElementById("ResultLoadLocalImage2").className = "ResultFailed";
+     $('#ResultLoadLocalImage').html("Error: "+ errorThrown + " Status "+status);
+     $('#ResultLoadLocalImage2').html("Result: "+xhr);
+  }
+};
+
+$.ajax(settings);
+}
+
+function StatusLocalImage(APIKey){
+    var jobId=document.getElementById("ResultLoadLocalImageVar").textContent;
+    jobId=jobId.substring(8);
+    console.log(jobId);
+     document.getElementById("StatusLoadLocalImage").className = "ResultRunning";
+     document.getElementById("StatusLoadLocalImage2").className = "ResultRunning";
+     $('#StatusLoadLocalImage').html("Running");
+     $('#StatusLoadLocalImage2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/job/"+jobId,
+  "method": "GET",
+  "headers": {
+    "content-type": "application/json",
+    "authorization":"Basic " + btoa(APIKey + ":" + ""),
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("StatusLoadLocalImage").className = "ResultSuccess";
+     document.getElementById("StatusLoadLocalImage2").className = "ResultSuccess";
+     $('#StatusLoadLocalImage').html("Success");
+     $('#StatusLoadLocalImage2').html("Result: "+JSON.stringify(response));
+     MWSDeployment(APIKey);
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("StatusLoadLocalImage").className = "ResultFailed";
+     document.getElementById("StatusLoadLocalImage2").className = "ResultFailed";
+     $('#StatusLoadLocalImage').html("Error: "+ errorThrown + " Status "+status);
+     $('#StatusLoadLocalImage2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings);    
+    
+}
+
+function MWSDeployment(APIKey){
+    var jobId=document.getElementById("ResultLoadLocalImageVar").textContent;
+    jobId=jobId.substring(8);
+    console.log(jobId);
+     document.getElementById("Deployment").className = "ResultRunning";
+     document.getElementById("Deployment2").className = "ResultRunning";
+     $('#Deployment').html("Running");
+     $('#Deployment2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/deployment/",
+  "method": "POST",
+    "processData": false,
+  "data": "{\n    \"dataId\": \""+jobId+"\",\n    \"type\": \"access\",\n    \"deploymentType\": \"geoserver\"\n}\n",
+  "headers": {
+    "content-type": "application/json",
+    "authorization":"Basic " + btoa(APIKey + ":" + ""),
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("Deployment").className = "ResultSuccess";
+     document.getElementById("Deployment2").className = "ResultSuccess";
+     $('#Deployment').html("Success");
+     $('#Deployment2').html("Result: "+JSON.stringify(response));
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("Deployment").className = "ResultFailed";
+     document.getElementById("Deployment2").className = "ResultFailed";
+     $('#Deployment').html("Error: "+ errorThrown + " Status "+status);
+     $('#Deployment2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings);    
+    
+}
+
+function IngestExternalRaster(APIKey){
+     document.getElementById("IngestExternalRaster").className = "ResultRunning";
+     document.getElementById("IngestExternalRaster2").className = "ResultRunning";
+     $('#IngestExternalRaster').html("Running");
+     $('#IngestExternalRaster2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/data/",
+  "method": "POST",
+  "processData": false,
+  "data": "{\n  \"type\": \"ingest\",\n  \"host\": \"false\",\n  \"data\": {\n    \"dataType\": {\n      \"type\": \"raster\",\n      \"location\": {\n        \"type\": \"s3\",\n        \"bucketName\": \"external-public-access-test\",\n        \"fileName\": \"terrametrics.tif\",\n        \"domainName\": \"s3.amazonaws.com\"\n      }\n    },\n    \"metadata\": {\n      \"name\": \"My Test raster external file\",\n      \"description\": \"This is a test.\",\n      \"classType\": \"unclassified\"\n    }\n  }\n}",
+  "headers": {
+    "content-type": "application/json",
+    "authorization":"Basic " + btoa(APIKey + ":" + ""),
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("IngestExternalRaster").className = "ResultSuccess";
+     document.getElementById("IngestExternalRaster2").className = "ResultSuccess";
+     var jsonResult= JSON.stringify(response);
+     var start = jsonResult.indexOf("jobId");
+     var end = jsonResult.indexOf("}}");
+     jsonResult = jsonResult.substring(start+8,end);
+     jsonResult=jsonResult.replace("\"","");
+     $('#IngestExternalRaster').html("Success");
+
+     $('#IngestExternalRaster2').html("Result: "+JSON.stringify(response));
+     $('#IngestExternalRasterVar').html("Result: "+jsonResult);
+     ExtIngestStatus(APIKey);
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("IngestExternalRaster").className = "ResultFailed";
+     document.getElementById("IngestExternalRaster2").className = "ResultFailed";
+     $('#IngestExternalRaster').html("Error: "+ errorThrown + " Status "+status);
+     $('#IngestExternalRaster2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings);    
+    
+}
+
+function LoadGeoJSONFile(APIKey){
+var file = document.getElementById("uploadfileGeoJSON");
+var form = new FormData();
+form.append("data", "{ \"type\": \"ingest\", \"host\": \"true\", \"data\" : { \"dataType\": { \"type\": \"geojson\" }, \"metadata\": { \"name\": \"Test.geojson\", \"description\": \"Testing the DOCS\" } } }");
+form.append("file", file.files[0]);
+     document.getElementById("LoadGeoJSONFile").className = "ResultRunning";
+     document.getElementById("LoadGeoJSONFile2").className = "ResultRunning";
+     $('#LoadGeoJSONFile').html("Running");
+     $('#LoadGeoJSONFile2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/data/file",
+  "method": "POST",
+  "headers": {
+    "authorization":"Basic " + btoa(APIKey + ":" + "")
+  },
+  "processData": false,
+  "contentType": false,
+  "mimeType": "multipart/form-data",
+  "data": form,
+    "success": function (response) {
+     console.log(response);
+     document.getElementById("LoadGeoJSONFile").className = "ResultSuccess";
+     document.getElementById("LoadGeoJSONFile2").className = "ResultSuccess";
+     $('#LoadGeoJSONFile').html("Success");
+     var jsonResult= JSON.parse(response);
+     $('#LoadGeoJSONFile2').html("Result: "+JSON.stringify(response));
+     $('#LoadGeoJSONFileVar').html("Result: "+jsonResult.data.jobId);
+     setTimeout(function(){
+            StatusGeoJSON(APIKey);
+    }, 10000);
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("LoadGeoJSONFile").className = "ResultFailed";
+     document.getElementById("LoadGeoJSONFile2").className = "ResultFailed";
+     $('#LoadGeoJSONFile').html("Error: "+ errorThrown + " Status "+status);
+     $('#LoadGeoJSONFile2').html("Result: "+xhr);
+  }
+};
+
+$.ajax(settings);
+}
+
+function ExecuteJobCopy(APIKey){
+    var jobId=document.getElementById("ResultLoadLocalImageVar").textContent;
+    jobId=jobId.substring(8);
+    console.log(jobId);
+     document.getElementById("ExecuteJobCopy").className = "ResultRunning";
+     document.getElementById("ExecuteJobCopy2").className = "ResultRunning";
+     $('#ExecuteJobCopy').html("Running");
+     $('#ExecuteJobCopy2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/job/"+jobId,
+  "method": "POST",
+  "processData": false,
+  "data": "{\n\"type\":\"execute-service\",\n\"data\":{\n\"serviceId\":  \"{{serviceId}}\",\n   \"dataInputs\": {},\n\"dataOutput\": [ {  \"mimeType\":\"application/json\", \"type\":\"text\"}]\n}\n}",
+  "headers": {
+    "content-type": "application/json",
+    "authorization":"Basic " + btoa(APIKey + ":" + ""),
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("ExecuteJobCopy").className = "ResultSuccess";
+     document.getElementById("ExecuteJobCopy2").className = "ResultSuccess";
+     $('#ExecuteJobCopy').html("Success");
+     $('#ExecuteJobCopy2').html("Result: "+JSON.stringify(response));
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("ExecuteJobCopy").className = "ResultFailed";
+     document.getElementById("ExecuteJobCopy2").className = "ResultFailed";
+     $('#ExecuteJobCopy').html("Error: "+ errorThrown + " Status "+status);
+     $('#ExecuteJobCopy2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings);    
+    
+}
+
+function SetupDog(APIKey){
+var form = new FormData();
+var file = document.getElementById("uploadfileSetupDog");
+form.append("data", "{ \"type\": \"ingest\", \"host\": \"true\", \"data\" : { \"dataType\": { \"type\": \"raster\" }, \"metadata\": { \"name\": \"terrametrics.tif\", \"description\": \"The lazy dog.\" } } }");
+form.append("file", file.files[0]);
+document.getElementById("SetupDog").className = "ResultRunning";
+document.getElementById("SetupDog2").className = "ResultRunning";
+$('#SetupDog').html("Running");
+$('#SetupDog2').html("Running");
+
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/data/file",
+  "method": "POST",
+  "headers": {
+    "authorization":"Basic " + btoa(APIKey + ":" + ""),
+  },
+  "processData": false,
+  "contentType": false,
+  "mimeType": "multipart/form-data",
+  "data": form,
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("SetupDog").className = "ResultSuccess";
+     document.getElementById("SetupDog2").className = "ResultSuccess";
+     jsonResult=JSON.parse(response);
+     $('#SetupDog').html("Success");
+     $('#SetupDog2').html("Result: "+JSON.stringify(response));
+     $('#SetupDogVar').html("Result: "+jsonResult.data.jobId);
+     DogStatus(APIKey);
+     DogFilter(APIKey);
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("SetupDog").className = "ResultFailed";
+     document.getElementById("SetupDog2").className = "ResultFailed";
+     $('#SetupDog').html("Error: "+ errorThrown + " Status "+status);
+     $('#SetupDog2').html("Result: "+xhr);
+  }
+}
+
+$.ajax(settings).done(function (response) {
+  console.log(response);
+});    
+}
+
+function StatusGeoJSON(APIKey){
+   
+    var jobId=document.getElementById("LoadGeoJSONFileVar").textContent;
+    jobId=jobId.substring(8);
+    console.log(jobId);
+     document.getElementById("StatusGeoJSON").className = "ResultRunning";
+     document.getElementById("StatusGeoJSON2").className = "ResultRunning";
+     $('#StatusGeoJSON').html("Running");
+     $('#StatusGeoJSON2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/job/"+jobId,
+  "method": "GET",
+  "headers": {
+    "content-type": "application/json",
+    "authorization":"Basic " + btoa(APIKey + ":" + ""),
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("StatusGeoJSON").className = "ResultSuccess";
+     document.getElementById("StatusGeoJSON2").className = "ResultSuccess";
+     var jsonResult= JSON.stringify(response);
+     var start = jsonResult.indexOf("dataId");
+     var end = jsonResult.indexOf("},");
+     jsonResult = jsonResult.substring(start+9,end);
+     jsonResult=jsonResult.replace("\"","");
+     $('#StatusGeoJSON').html("Success");
+     $('#StatusGeoJSONVar').html("Result: "+jsonResult);
+     $('#StatusGeoJSON2').html("Result: "+JSON.stringify(response));
+     GetGeoJSONdata(APIKey);
+     InvokeHello(APIKey)
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("StatusGeoJSON").className = "ResultFailed";
+     document.getElementById("StatusGeoJSON2").className = "ResultFailed";
+     $('#StatusGeoJSON').html("Error: "+ errorThrown + " Status "+status);
+     $('#StatusGeoJSON2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings); 
+
+}
+
+function GetGeoJSONdata(APIKey){
+   
+    var dataId=document.getElementById("StatusGeoJSONVar").textContent;
+    dataId=dataId.substring(8);
+    console.log(dataId);
+     document.getElementById("GetGeoJSONdata").className = "ResultRunning";
+     document.getElementById("GetGeoJSONdata2").className = "ResultRunning";
+     $('#GetGeoJSONdata').html("Running");
+     $('#GetGeoJSONdata2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/data/"+dataId,
+  "method": "GET",
+  "headers": {
+    "authorization":"Basic " + btoa(APIKey + ":" + ""),
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("GetGeoJSONdata").className = "ResultSuccess";
+     document.getElementById("GetGeoJSONdata2").className = "ResultSuccess";
+     $('#GetGeoJSONdata').html("Success");
+     $('#GetGeoJSONdata2').html("Result: "+JSON.stringify(response));
+     GetGeoJSONfile(APIKey);
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("GetGeoJSONdata").className = "ResultFailed";
+     document.getElementById("GetGeoJSONdata2").className = "ResultFailed";
+     $('#GetGeoJSONdata').html("Error: "+ errorThrown + " Status "+status);
+     $('#GetGeoJSONdata2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings); 
+
+}
+function GetGeoJSONfile(APIKey){
+   
+    var dataId=document.getElementById("StatusGeoJSONVar").textContent;
+    dataId=dataId.substring(8);
+    console.log(dataId);
+     document.getElementById("GetGeoJSONfile").className = "ResultRunning";
+     document.getElementById("GetGeoJSONfile2").className = "ResultRunning";
+     $('#GetGeoJSONfile').html("Running");
+     $('#GetGeoJSONfile2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/file/"+dataId,
+  "method": "GET",
+  "headers": {
+    "authorization":"Basic " + btoa(APIKey + ":" + ""),
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("GetGeoJSONfile").className = "ResultSuccess";
+     document.getElementById("GetGeoJSONfile2").className = "ResultSuccess";
+     $('#GetGeoJSONfile').html("Success");
+     $('#GetGeoJSONfile2').html("Result: "+JSON.stringify(response));
+     DeleteGeoJSON(APIKey);
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("GetGeoJSONfile").className = "ResultFailed";
+     document.getElementById("GetGeoJSONfile2").className = "ResultFailed";
+     $('#GetGeoJSONfile').html("Error: "+ errorThrown + " Status "+status);
+     $('#GetGeoJSONfile2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings); 
+
+}
+function DeleteGeoJSON(APIKey){
+    var dataId=document.getElementById("StatusGeoJSONVar").textContent;
+    dataId=dataId.substring(8);
+    console.log(dataId);
+     document.getElementById("DeleteGeoJSON").className = "ResultRunning";
+     document.getElementById("DeleteGeoJSON2").className = "ResultRunning";
+     $('#DeleteGeoJSON').html("Running");
+     $('#DeleteGeoJSON2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/data/"+dataId,
+  "method": "DELETE",
+  "headers": {
+    "authorization":"Basic " + btoa(APIKey + ":" + ""),
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("DeleteGeoJSON").className = "ResultSuccess";
+     document.getElementById("DeleteGeoJSON2").className = "ResultSuccess";
+     $('#DeleteGeoJSON').html("Success");
+     $('#DeleteGeoJSON2').html("Result: "+JSON.stringify(response));
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("DeleteGeoJSON").className = "ResultFailed";
+     document.getElementById("DeleteGeoJSON2").className = "ResultFailed";
+     $('#DeleteGeoJSON').html("Error: "+ errorThrown + " Status "+status);
+     $('#DeleteGeoJSON2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings); 
+
+}
+
+function ExtIngestStatus(APIKey){
+    var jobid=document.getElementById("IngestExternalRasterVar").textContent;
+    jobid=jobid.substring(8);
+    console.log(jobid);
+     document.getElementById("ExtIngestStatus").className = "ResultRunning";
+     document.getElementById("ExtIngestStatus2").className = "ResultRunning";
+     $('#ExtIngestStatus').html("Running");
+     $('#ExtIngestStatus2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/job/"+jobid,
+  "method": "GET",
+  "headers": {
+    "authorization":"Basic " + btoa(APIKey + ":" + ""),
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("ExtIngestStatus").className = "ResultSuccess";
+     document.getElementById("ExtIngestStatus2").className = "ResultSuccess";
+     $('#ExtIngestStatus').html("Success");
+     $('#ExtIngestStatus2').html("Result: "+JSON.stringify(response));
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("ExtIngestStatus").className = "ResultFailed";
+     document.getElementById("ExtIngestStatus2").className = "ResultFailed";
+     $('#ExtIngestStatus').html("Error: "+ errorThrown + " Status "+status);
+     $('#ExtIngestStatus2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings); 
+
+}
+
+function DogStatus(APIKey){
+    var jobid=document.getElementById("SetupDogVar").textContent;
+    jobid=jobid.substring(8);
+    console.log(jobid);
+     document.getElementById("DogStatus").className = "ResultRunning";
+     document.getElementById("DogStatus2").className = "ResultRunning";
+     $('#DogStatus').html("Running");
+     $('#DogStatus2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/job/"+jobid,
+  "method": "GET",
+  "headers": {
+    "authorization":"Basic " + btoa(APIKey + ":" + ""),
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("DogStatus").className = "ResultSuccess";
+     document.getElementById("DogStatus2").className = "ResultSuccess";
+     $('#DogStatus').html("Success");
+     $('#DogStatus2').html("Result: "+JSON.stringify(response));
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("DogStatus").className = "ResultFailed";
+     document.getElementById("DogStatus2").className = "ResultFailed";
+     $('#DogStatus').html("Error: "+ errorThrown + " Status "+status);
+     $('#DogStatus2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings); 
+
+}
+function DogFilter(APIKey){
+     document.getElementById("DogFilter").className = "ResultRunning";
+     document.getElementById("DogFilter2").className = "ResultRunning";
+     $('#DogFilter').html("Running");
+     $('#DogFilter2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/data?keyword=dog",
+  "method": "GET",
+  "headers": {
+    "authorization":"Basic " + btoa(APIKey + ":" + ""),
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("DogFilter").className = "ResultSuccess";
+     document.getElementById("DogFilter2").className = "ResultSuccess";
+     $('#DogFilter').html("Success");
+     $('#DogFilter2').html("Result: "+JSON.stringify(response));
+     CreateEvent(APIKey);
+     FindAlert(APIKey);
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("DogFilter").className = "ResultFailed";
+     document.getElementById("DogFilter2").className = "ResultFailed";
+     $('#DogFilter').html("Error: "+ errorThrown + " Status "+status);
+     $('#DogFilter2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings); 
+
+}
+function InvokeHello(APIKey){
+   var serviceid=document.getElementById("ResultRegisterServiceVar").textContent;
+    serviceid=serviceid.substring(8);
+    console.log(serviceid);
+    var jobId=document.getElementById("LoadGeoJSONFileVar").textContent;
+    jobId=jobId.substring(8);
+    console.log(jobId);
+     document.getElementById("DogFilter").className = "ResultRunning";
+     document.getElementById("DogFilter2").className = "ResultRunning";
+     $('#DogFilter').html("Running");
+     $('#DogFilter2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/job/"+jobId,
+  "method": "GET",
+  "processData": false,
+  "data": "{\n  \"type\":\"execute-service\",\n  \"data\":{\n    \"serviceId\":  \""+serviceid+"\",\n    \"dataInputs\": {},\n    \"dataOutput\": [{ \"mimeType\":\"application/json\", \"type\":\"text\" }]\n  }\n}",
+  "headers": {
+    "authorization":"Basic " + btoa(APIKey + ":" + ""),
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("InvokeHello").className = "ResultSuccess";
+     document.getElementById("InvokeHello2").className = "ResultSuccess";
+     $('#InvokeHello').html("Success");
+     $('#InvokeHello2').html("Result: "+JSON.stringify(response));
+     var jsonResult= JSON.stringify(response);
+     var start = jsonResult.indexOf("jobId");
+     var end = jsonResult.indexOf("}}");
+     jsonResult = jsonResult.substring(start+8,end-1);
+     jsonResult=jsonResult.replace("\"","");
+     jsonResult=jsonResult.replace("\"","");
+     $('#InvokeHelloVar').html("Result: "+jsonResult);
+     InvokeJobStatus(APIKey);
+     CreateTrigger(APIKey);
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("InvokeHello").className = "ResultFailed";
+     document.getElementById("InvokeHello2").className = "ResultFailed";
+     $('#InvokeHello').html("Error: "+ errorThrown + " Status "+status);
+     $('#InvokeHello2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings); 
+
+}
+
+function InvokeJobStatus(APIKey){
+    var jobId=document.getElementById("InvokeHelloVar").textContent;
+    jobId=jobId.substring(8);
+    console.log(jobId);
+     document.getElementById("InvokeJobStatus").className = "ResultRunning";
+     document.getElementById("InvokeJobStatus2").className = "ResultRunning";
+     $('#InvokeJobStatus').html("Running");
+     $('#InvokeJobStatus2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/job/"+jobId,
+  "method": "POST",
+  "headers": {
+    "authorization":"Basic " + btoa(APIKey + ":" + ""),
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("InvokeJobStatus").className = "ResultSuccess";
+     document.getElementById("InvokeJobStatus2").className = "ResultSuccess";
+     $('#InvokeJobStatus').html("Success");
+     $('#InvokeJobStatus2').html("Result: "+JSON.stringify(response));
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("InvokeJobStatus").className = "ResultFailed";
+     document.getElementById("InvokeJobStatus2").className = "ResultFailed";
+     $('#InvokeJobStatus').html("Error: "+ errorThrown + " Status "+status);
+     $('#InvokeJobStatus2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings); 
+
+}
+
+function CreateEventType(APIKey){
+     document.getElementById("CreateEventType").className = "ResultRunning";
+     document.getElementById("CreateEventType2").className = "ResultRunning";
+     var unique = new Date();
+     $('#CreateEventType').html("Running");
+     $('#CreateEventType2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/eventType",
+  "method": "POST",
+  "processData": false,
+  "data": "{\r\n  \"name\": \"testevent-"+unique.getTime()+"\",\r\n  \"mapping\": {\r\n    \"filename\":  \"string\",\r\n    \"code\":    \"string\",\r\n    \"severity\":  \"integer\"\r\n  }\r\n}",
+  "headers": {
+    "authorization":"Basic " + btoa(APIKey + ":" + ""),
+    "content-type": "application/json",
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("CreateEventType").className = "ResultSuccess";
+     document.getElementById("CreateEventType2").className = "ResultSuccess";
+     $('#CreateEventType').html("Success");
+     $('#CreateEventType2').html("Result: "+JSON.stringify(response));
+          var jsonResult= JSON.stringify(response);
+     var start = jsonResult.indexOf("eventTypeId");
+     var end = jsonResult.indexOf("name");
+     jsonResult = jsonResult.substring(start+12,end-3);
+     jsonResult=jsonResult.replace("\"","");
+     jsonResult=jsonResult.replace("\"","");
+     $('#CreateEventTypeVar').html("Result: "+jsonResult);
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("CreateEventType").className = "ResultFailed";
+     document.getElementById("CreateEventType2").className = "ResultFailed";
+     $('#CreateEventType').html("Error: "+ errorThrown + " Status "+status);
+     $('#CreateEventType2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings); 
+
+}
+function CreateTrigger(APIKey){
+    var eventTypeId=document.getElementById("CreateEventTypeVar").textContent;
+    eventTypeId=eventTypeId.substring(9);
+    console.log(eventTypeId);
+    var serviceId=document.getElementById("ResultRegisterServiceVar").textContent;
+    serviceId=serviceId.substring(8);
+    console.log(serviceId);
+     document.getElementById("CreateTrigger").className = "ResultRunning";
+     document.getElementById("CreateTrigger2").className = "ResultRunning";
+     $('#CreateTrigger').html("Running");
+     $('#CreateTrigger2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/trigger",
+  "method": "POST",
+     "processData": false,
+  "data": "{\r\n    \"name\": \"High Severity\",\r\n    \"eventTypeId\": \""+eventTypeId+"\",\r\n    \"condition\": {\r\n        \"query\": { \"query\": { \"match_all\": {} } }\r\n    },\r\n    \"job\": {\r\n        \"userName\": \"test\",\r\n        \"jobType\": {\r\n            \"type\": \"execute-service\",\r\n            \"data\": {\r\n                \"serviceId\": \""+serviceId+"\",\r\n                \"dataInputs\": {},\r\n                \"dataOutput\": [\r\n                    {\r\n                        \"mimeType\": \"application/json\",\r\n                        \"type\": \"text\"\r\n                    }\r\n                ]\r\n            }\r\n        }\r\n    },\r\n    \"enabled\": true\r\n}",
+  "headers": {
+    "authorization":"Basic " + btoa(APIKey + ":" + ""),
+    "content-type": "application/json",
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("CreateTrigger").className = "ResultSuccess";
+     document.getElementById("CreateTrigger2").className = "ResultSuccess";
+     $('#CreateTrigger').html("Success");
+     $('#CreateTrigger2').html("Result: "+JSON.stringify(response));
+     var jsonResult= JSON.stringify(response);
+     var start = jsonResult.indexOf("triggerId");
+     var end = jsonResult.indexOf("name");
+     jsonResult = jsonResult.substring(start+12,end-2);
+     jsonResult=jsonResult.replace("\"","");
+     jsonResult=jsonResult.replace("\"","");
+     $('#CreateTriggerVar').html("Result: "+jsonResult);
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("CreateTrigger").className = "ResultFailed";
+     document.getElementById("CreateTrigger2").className = "ResultFailed";
+     $('#CreateTrigger').html("Error: "+ errorThrown + " Status "+status);
+     $('#CreateTrigger2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings); 
+
+}
+
+function CreateEvent(APIKey){
+    var eventTypeId=document.getElementById("CreateEventTypeVar").textContent;
+    eventTypeId=eventTypeId.substring(9);
+    console.log(eventTypeId);
+     document.getElementById("CreateEvent").className = "ResultRunning";
+     document.getElementById("CreateEvent2").className = "ResultRunning";
+     $('#CreateEvent').html("Running");
+     $('#CreateEvent2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/event",
+  "method": "POST",
+     "processData": false,
+    "data": "{\r\n    \"eventTypeId\": \""+eventTypeId+"\",\r\n    \"data\": {\r\n        \"filename\": \"test\",\r\n        \"severity\": 200,\r\n        \"code\": \"us-bbox\"\r\n    }\r\n}",
+    "headers": {
+    "authorization":"Basic " + btoa(APIKey + ":" + ""),
+    "content-type": "application/json",
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("CreateEvent").className = "ResultSuccess";
+     document.getElementById("CreateEvent2").className = "ResultSuccess";
+     $('#CreateEvent').html("Success");
+     $('#CreateEvent2').html("Result: "+JSON.stringify(response));
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("CreateEvent").className = "ResultFailed";
+     document.getElementById("CreateEvent2").className = "ResultFailed";
+     $('#CreateEvent').html("Error: "+ errorThrown + " Status "+status);
+     $('#CreateEvent2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings); 
+
+}
+function FindAlert(APIKey){
+    var triggerId=document.getElementById("CreateTriggerVar").textContent;
+    triggerId=triggerId.substring(8);
+    console.log(triggerId);
+     document.getElementById("FindAlert").className = "ResultRunning";
+     document.getElementById("FindAlert2").className = "ResultRunning";
+     $('#FindAlert').html("Running");
+     $('#FindAlert2').html("Running");
+var settings = {
+  "async": true,
+  "crossDomain": true,
+  "url": "https://pz-gateway.dev.east.paas.nga.mil/alert?triggerId="+triggerId,
+  "method": "GET",
+     "processData": false,
+     "headers": {
+    "authorization":"Basic " + btoa(APIKey + ":" + ""),
+  },
+  "success": function (response) {
+     console.log(response);
+     document.getElementById("FindAlert").className = "ResultSuccess";
+     document.getElementById("FindAlert2").className = "ResultSuccess";
+     $('#FindAlert').html("Success");
+     $('#FindAlert2').html("Result: "+JSON.stringify(response));
+     },
+  "error": function (xhr,status,errorThrown){
+     console.log(xhr);
+     document.getElementById("FindAlert").className = "ResultFailed";
+     document.getElementById("FindAlert2").className = "ResultFailed";
+     $('#FindAlert').html("Error: "+ errorThrown + " Status "+status);
+     $('#FindAlert2').html("Result: "+xhr);
+  }
+};
+$.ajax(settings); 
+
+}
+</script>
+<div class="TestDiv "  id="runTestDiv">
+    <input id="APIKEY" type="text" value="Enter API Key" />
+    <input type="button" value="Run Test" onclick="fireTest()" />
+</div>
+<div class="TestDiv "  id="txtRegisterServiceTitle">
+    <label class="TestTitle">5.2.1 Register Hello Example Service</label>
+    <label class="Result" id="ResultRegisterService">Not Run</label>
+    <label class="Result" id="ResultRegisterService2">Not Run</label>
+    <label class="Result" id="ResultRegisterServiceVar">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtLoadLocalImageTitle">
+    <label class="TestTitle">3.1.1 Loading a Local Image</label>
+    <label class="Result" id="ResultLoadLocalImage">Not Run</label>
+    <label class="Result" id="ResultLoadLocalImage2">Not Run</label>
+    <label class="Result" id="ResultLoadLocalImageVar">Not Run</label>
+    <input type="file" id="uploadfileLocalImage" name="uploadfileLocalImage" />
+</div>
+<div class="TestDiv "  id="txtStatusLocalImageTitle">
+    <label class="TestTitle">3.1 Status of Local Image</label>
+    <label class="Result" id="StatusLoadLocalImage">Not Run</label>
+    <label class="Result" id="StatusLoadLocalImage2">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtDeploymentTitle">
+    <label class="TestTitle">3.1.2 WMS Deployment</label>
+    <label class="Result" id="Deployment">Not Run</label>
+    <label class="Result" id="Deployment2">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtIngestExternalRasterTitle">
+    <label class="TestTitle">3.2 Ingest External Raster</label>
+    <label class="Result" id="IngestExternalRaster">Not Run</label>
+    <label class="Result" id="IngestExternalRaster2">Not Run</label>
+    <label class="Result" id="IngestExternalRasterVar">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtLoadGeoJSONFileTitle">
+    <label class="TestTitle">3.3 Loading a GeoJSON File</label>
+    <label class="Result" id="LoadGeoJSONFile">Not Run</label>
+    <label class="Result" id="LoadGeoJSONFile2">Not Run</label>
+    <label class="Result" id="LoadGeoJSONFileVar">Not Run</label>
+    <input type="file" id="uploadfileGeoJSON" name="uploadfileGeoJSON" />
+</div>
+<div class="TestDiv "  id="txtExecuteJobCopy">
+    <label class="TestTitle">Execute Job copy</label>
+    <label class="Result" id="ExecuteJobCopy">Not Run</label>
+    <label class="Result" id="ExecuteJobCopy2">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtSetupDogTitle">
+    <label class="TestTitle">4.1 Setup: dog</label>
+    <label class="Result" id="SetupDog">Not Run</label>
+    <label class="Result" id="SetupDog2">Not Run</label>
+    <label class="Result" id="SetupDogVar">Not Run</label>
+    <input type="file" id="uploadfileSetupDog" name="uploadfileSetupDog" />
+</div>
+<div class="TestDiv "  id="txtStatusGeoJSON">
+    <label class="TestTitle">3.3 Status of GeoJSON(10 Sec Delay)</label>
+    <label class="Result" id="StatusGeoJSON">Not Run</label>
+    <label class="Result" id="StatusGeoJSON2">Not Run</label>
+    <label class="Result" id="StatusGeoJSONVar">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtGetGeoJSONdata">
+    <label class="TestTitle">3.3 Get GeoJSON data</label>
+    <label class="Result" id="GetGeoJSONdata">Not Run</label>
+    <label class="Result" id="GetGeoJSONdata2">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtGetGeoJSONfile">
+    <label class="TestTitle">3.3 Get GeoJSON file</label>
+    <label class="Result" id="GetGeoJSONfile">Not Run</label>
+    <label class="Result" id="GetGeoJSONfile2">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtDeleteGeoJSON">
+    <label class="TestTitle">Delete GeoJSON Data</label>
+    <label class="Result" id="DeleteGeoJSON">Not Run</label>
+    <label class="Result" id="DeleteGeoJSON2">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtExtIngestStatus">
+    <label class="TestTitle">3.2 Status of External Ingest</label>
+    <label class="Result" id="ExtIngestStatus">Not Run</label>
+    <label class="Result" id="ExtIngestStatus2">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtDogStatus">
+    <label class="TestTitle">4.1 Status: dog</label>
+    <label class="Result" id="DogStatus">Not Run</label>
+    <label class="Result" id="DogStatus2">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtDogFilter">
+    <label class="TestTitle">4.2 Filtered GET: dog</label>
+    <label class="Result" id="DogFilter">Not Run</label>
+    <label class="Result" id="DogFilter2">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtInvokeHello">
+    <label class="TestTitle">5.3.1 Invoke Hello Example Service with GET</label>
+    <label class="Result" id="InvokeHello">Not Run</label>
+    <label class="Result" id="InvokeHello2">Not Run</label>
+    <label class="Result" id="InvokeHelloVar">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtInvokeJobStatus">
+    <label class="TestTitle">5.3.3 Invoked service Job Status POST</label>
+    <label class="Result" id="InvokeJobStatus">Not Run</label>
+    <label class="Result" id="InvokeJobStatus2">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtCreateEventType">
+    <label class="TestTitle">6.1 Create EventType</label>
+    <label class="Result" id="CreateEventType">Not Run</label>
+    <label class="Result" id="CreateEventType2">Not Run</label>
+     <label class="Result" id="CreateEventTypeVar">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtCreateTrigger">
+    <label class="TestTitle">6.2 Create Trigger</label>
+    <label class="Result" id="CreateTrigger">Not Run</label>
+    <label class="Result" id="CreateTrigger2">Not Run</label>
+    <label class="Result" id="CreateTriggerVar">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtCreateEvent">
+    <label class="TestTitle">6.3 Create Event</label>
+    <label class="Result" id="CreateEvent">Not Run</label>
+    <label class="Result" id="CreateEvent2">Not Run</label>
+</div>
+<div class="TestDiv "  id="txtFindAlert">
+    <label class="TestTitle">6.4 Find Alert</label>
+    <label class="Result" id="FindAlert">Not Run</label>
+    <label class="Result" id="FindAlert2">Not Run</label>
+</div>
+</body>
+</html>
